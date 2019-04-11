@@ -1,0 +1,13 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "",
+  "scripts": {
+    "dev": "electron ./main.js"
+  },
+  "devDependencies": {
+    "electron": "^4.1.4"
+  }
+}

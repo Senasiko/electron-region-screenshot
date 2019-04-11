@@ -1,0 +1,20 @@
+{
+  "name": "electron-region-screenshot",
+  "version": "1.0.0",
+  "description": "region screenshot for electron",
+  "main": "index.js",
+  "directories": {
+    "example": "example"
+  },
+  "keywords": [
+    "electron",
+    "screen",
+    "shot",
+    "screenshot"
+  ],
+  "author": "senasiko",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^4.1.4"
+  }
+}
