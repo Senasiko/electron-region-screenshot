@@ -11,9 +11,5 @@ export interface ScreenshotImgData {
   base64: string;
 }
 
-export interface Screenshot {
-  initMain: (webContent: WebContents, options?: MainOptions) => void;
-  screenshot: () => ScreenshotImgData;
-}
-
-export default Screenshot;
+export const initMain: (webContent: WebContents, options?: MainOptions) => void;
+export const screenshot: () => ScreenshotImgData;
