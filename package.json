@@ -2,6 +2,7 @@
   "name": "electron-region-screenshot",
   "version": "1.0.0",
   "description": "region screenshot for electron",
+  "author": "Senasiko",
   "repository": {
     "type": "git",
     "url": "https://github.com/Senasiko/electron-region-screenshot"
@@ -16,7 +17,6 @@
     "shot",
     "screenshot"
   ],
-  "author": "senasiko",
   "license": "MIT",
   "devDependencies": {
     "electron": "^4.1.4"
