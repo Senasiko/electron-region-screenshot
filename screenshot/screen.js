@@ -3,12 +3,6 @@ const {
 } = require('electron');
 const fs = require('fs');
 
-/*
- *
- *原理运用遮罩层，俩个canvas，底下为背景原图产生一个黑色背景画布，上层选区，将选中像素绘制到选区
- *鼠标按下移动鼠标产生一个矩形框，
- *
- */
 class Screen {
   constructor(cas, casMask, src, size) {
     this.canvas = document.getElementById(cas);
@@ -78,7 +72,6 @@ class Screen {
 
     // 鼠标按下
     const down = (ev) => {
-      console.log(ev)
       document.onselectstart = function () {
         return false;
       };
@@ -149,7 +142,6 @@ class Screen {
         const _y = parseInt(this.canvasMask.style.top) + this.canvasMask.height;
         const x0 = parseInt(this.canvasMask.style.left);
         const y0 = parseInt(this.canvasMask.style.top);
-        console.log(this.canvasMask.width);
         this.showTool(_x, _y, x0, y0);
 
         document.removeEventListener('mousemove', move);
@@ -157,8 +149,26 @@ class Screen {
       return false;
     }
 
+
+    // 记录上一次 down
+    let hasDown = false;
+    const click = (ev) => {
+      if (ev.target.dataset.drag) {
+        console.log(ev, hasDown);
+        if (hasDown) {
+          this.done();
+          return;
+        }
+        hasDown = true;
+        setTimeout(() => {
+          hasDown = false;
+        }, 200);
+      }
+    }
+
     document.addEventListener('mousedown', down, false);
     document.addEventListener('mouseup', up, false);
+    document.addEventListener('click', click, false)
 
     return {
       end,
@@ -371,8 +381,7 @@ class Screen {
   save() {
     const imgData = this.createImageData();
     remote.getCurrentWindow().setAlwaysOnTop(false);
-
-    remote.dialog.showSaveDialog({ filters: [{ name: 'Images', extensions: ['jpg', 'png', 'gif'] }] }, (pathStr) => {
+    remote.dialog.showSaveDialog({ defaultPath: `截图_${dateFormat()}.png`, filters: [{ name: 'Images', extensions: ['jpg', 'png', 'gif'] }] }, (pathStr) => {
       if (pathStr) {
         fs.writeFile(pathStr, new Buffer(imgData.replace('data:image/png;base64,', ''), 'base64'), () => {
           this.sendMsg('save', { path: pathStr, base64: imgData });
@@ -386,6 +395,11 @@ class Screen {
   sendMsg(type, msg) {
     ipcRenderer.send('screenshot-page', { type, message: msg });
   }
+}
+
+function dateFormat() {
+  const now = new Date();
+  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDay()}_${now.getHours()}/${now.getMinutes()}/${now.getSeconds()}`;
 }
 
 window.cut = (width, height) => {
