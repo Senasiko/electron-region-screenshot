@@ -21,6 +21,7 @@ function createChildWin(_url, opts) {
     }
   };
   if (process.platform === 'darwin') {
+    remote.app.dock.hide();
     config.simpleFullscreen = true;
   }
   config = Object.assign(config, opts);
@@ -37,6 +38,7 @@ function createChildWin(_url, opts) {
 function reset() {
   if (process.platform === 'darwin') {
     win && win.setSimpleFullScreen(false);
+    remote.app.dock.show();
   }
   win && win.close();
   win = null;

@@ -154,7 +154,6 @@ class Screen {
     let hasDown = false;
     const click = (ev) => {
       if (ev.target.dataset.drag) {
-        console.log(ev, hasDown);
         if (hasDown) {
           this.done();
           return;
@@ -399,7 +398,7 @@ class Screen {
 
 function dateFormat() {
   const now = new Date();
-  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDay()}_${now.getHours()}/${now.getMinutes()}/${now.getSeconds()}`;
+  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDay()}_${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
 }
 
 window.cut = (width, height) => {
