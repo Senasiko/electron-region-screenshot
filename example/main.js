@@ -3,7 +3,11 @@ const path = require('path');
 const { initMain } = require('../index');
 
 app.on('ready', () => {
-  const win = new BrowserWindow();
+  const win = new BrowserWindow({
+    webPreferences: {
+      nodeIntegration: true,
+    }
+  });
   win.loadFile(path.resolve(__dirname, './renderer.html'));
   win.webContents.openDevTools();
   initMain(win.webContents);

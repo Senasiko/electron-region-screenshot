@@ -1,4 +1,5 @@
-const { remote, desktopCapturer, ipcRenderer, screen } = require('electron');
+const { remote, desktopCapturer, ipcRenderer } = require('electron');
+const { screen } = remote;
 const url = require('url');
 const path = require('path');
 const clipRenderUrl = '../screenshot/screen.html';
@@ -15,6 +16,9 @@ function createChildWin(_url, opts) {
     transparent: true,
     frame: false,
     fullscreen: true,
+    webPreferences: {
+      nodeIntegration: true,
+    }
   };
   if (process.platform === 'darwin') {
     config.simpleFullscreen = true;
@@ -62,8 +66,8 @@ function screenshot(event, arg) {
     return Promise.reject(new Error('is cutting'));
   }
   if (!win) {
-    const currentWindowBounds = remote.getCurrentWindow().getBounds();
-    const currentScreen = screen.getDisplayNearestPoint({ x: currentWindowBounds.x, y: currentWindowBounds.y });
+    const cursorPoint = screen.getCursorScreenPoint();
+    const currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
     let currentScreenX = 0;
     let isOver = false;
     screen.getAllDisplays().forEach((display) => {
@@ -75,7 +79,6 @@ function screenshot(event, arg) {
       currentScreenX += display.size.width;
     });
     capturer(currentScreen).then((imgData) => {
-      console.log(currentScreenX);
       win = createChildWin(clipRenderUrl, {
         x: currentScreenX,
         y: 0,
