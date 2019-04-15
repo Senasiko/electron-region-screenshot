@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 const { initMain } = require('../index');
 
@@ -11,4 +11,16 @@ app.on('ready', () => {
   win.loadFile(path.resolve(__dirname, './renderer.html'));
   win.webContents.openDevTools();
   initMain(win.webContents);
+  Menu.setApplicationMenu(Menu.buildFromTemplate([{
+    label: '编辑',
+    submenu: [
+      {
+        accelerator: 'Esc',
+        label: '取消截图',
+        click: () => {
+          win.webContents.send('quit-cut');
+        },
+      },
+    ],
+  }]));
 })

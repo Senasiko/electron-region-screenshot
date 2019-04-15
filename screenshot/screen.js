@@ -1,5 +1,5 @@
 const {
-  ipcRenderer, clipboard, nativeImage, screen, remote,
+  ipcRenderer, clipboard, nativeImage, remote,
 } = require('electron');
 const fs = require('fs');
 
@@ -113,12 +113,7 @@ class Screen {
     const move = (ev) => {
 
       if (!this.cuted) {
-        this.clearCtx();
-        end.x = ev.pageX;
-        end.y = ev.pageY;
-        this.createRect(end.x, end.y, this.start.x, this.start.y);
-        this.maskShow(end.x, end.y, this.start.x, this.start.y);
-        this.tipShow(end.x, end.y, this.start.x, this.start.y);
+        this.cutEvent(ev.pageX, ev.pageY);
         return false;
       } if (this.state === 'draging') {
         this.dragEvent(ev.pageX, ev.pageY);
@@ -303,7 +298,19 @@ class Screen {
     this.rightBottomCursor.style.display = 'none';
   }
 
-  // 拖拽框设置
+  cutEvent(x, y) {
+    this.clearCtx();
+
+    let startX = this.start.x;
+    let startY = this.start.y;
+    let endX = x;
+    let endY = y;
+    if (endX < startX) [startX, endX] = [endX, startX];
+    if (endY < startY) [startY, endY] = [endY, startY];
+    this.createRect(endX, endY, startX, startY);
+    this.maskShow(endX, endY, startX, startY);
+    this.tipShow(endX, endY, startX, startY);
+  }
   // 拖拽动作
   dragEvent(x, y) {
     const w = this.canvas.offsetWidth;
