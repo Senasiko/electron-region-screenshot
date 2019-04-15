@@ -70,20 +70,10 @@ function screenshot(event, arg) {
   if (!win) {
     const cursorPoint = screen.getCursorScreenPoint();
     const currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
-    let currentScreenX = 0;
-    let isOver = false;
-    screen.getAllDisplays().forEach((display) => {
-      if (isOver) return;
-      if (display.id === currentScreen.id) {
-        isOver = true;
-        return;
-      }
-      currentScreenX += display.size.width;
-    });
     capturer(currentScreen).then((imgData) => {
       win = createChildWin(clipRenderUrl, {
-        x: currentScreenX,
-        y: 0,
+        x: currentScreen.bounds.x,
+        y: currentScreen.bounds.y,
         ...currentScreen.size,
       });
       win.on('closed', () => {
