@@ -398,7 +398,7 @@ class Screen {
 
 function dateFormat() {
   const now = new Date();
-  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDay()}_${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+  return `${now.getFullYear()}${now.getMonth() + 1}${now.getDay()}_${now.getHours()}${now.getMinutes()}${now.getSeconds()}`;
 }
 
 window.cut = (width, height) => {
