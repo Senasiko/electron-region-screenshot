@@ -15,15 +15,19 @@ function createChildWin(_url, opts) {
     show: false,
     transparent: true,
     frame: false,
-    fullscreen: true,
+    movable: false,
+    resizable: false,
+    fullscreen: process.platform === 'win32' || undefined,
+    enableLargerThanScreen: true,
+    hasShadow: false,
+    width: opts.width,
+    height: opts.height,
+    x: opts.x,
+    y: opts.y,
     webPreferences: {
       nodeIntegration: true,
     }
   };
-  if (process.platform === 'darwin') {
-    remote.app.dock.hide();
-    config.simpleFullscreen = true;
-  }
   config = Object.assign(config, opts);
   const _win = new BrowserWindow(config);
   _win.loadURL(url.format({
@@ -31,15 +35,17 @@ function createChildWin(_url, opts) {
     protocol: 'file',
     slashes: true,
   }));
-
+  if (process.platform === 'darwin') {
+    _win.setAlwaysOnTop(true, 'screen-saver')
+    _win.setVisibleOnAllWorkspaces(true)
+    _win.setFullScreenable(false)
+    _win.show()
+    _win.setVisibleOnAllWorkspaces(false)
+  }
   return _win;
 }
 
 function reset() {
-  if (process.platform === 'darwin') {
-    win && win.setSimpleFullScreen(false);
-    remote.app.dock.show();
-  }
   win && win.close();
   win = null;
 }

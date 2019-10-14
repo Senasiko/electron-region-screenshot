@@ -111,7 +111,7 @@ class Screen {
 
     // 鼠标移动
     const move = (ev) => {
-
+      
       if (!this.cuted) {
         this.cutEvent(ev.pageX, ev.pageY);
         return false;
@@ -353,6 +353,7 @@ class Screen {
       case 'right-top': position = [leftTopX, pageY, pageX, leftTopY + height]; break;
       case 'left-bottom': position = [pageX, leftTopY, leftTopX + width, pageY]; break;
       case 'right-bottom': position = [leftTopX, leftTopY, pageX, pageY]; break;
+      default: break;
     }
     this.clearCtx();
 
