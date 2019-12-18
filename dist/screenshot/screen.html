@@ -55,6 +55,16 @@
     #canvas {
       position: absolute;
       z-index: 20;
+      display: none;
+    }
+
+    #black-mask {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      opacity: 0.4;
+      z-index: 20;
     }
     
     #maskImg {
@@ -163,8 +173,8 @@
 
 <body>
   <canvas id='canvas'></canvas>
+  <div id="black-mask"></div>
   <canvas id='canvasMask' data-drag='drag'></canvas>
-  <!--<div data-drag='drag' id='drag'></div>-->
   <span class="tipNum">200x200</span>
   <div class="tool">
     <span data-save='save' class="save" title="保存"></span>

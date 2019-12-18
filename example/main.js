@@ -1,6 +1,6 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
-const { initMain } = require('../index');
+const { initMain } = require('../dist/index');
 
 app.on('ready', () => {
   const win = new BrowserWindow({
@@ -18,7 +18,7 @@ app.on('ready', () => {
         accelerator: 'Esc',
         label: '取消截图',
         click: () => {
-          win.webContents.send('quit-cut');
+          win.webContents.send('quit-cut', BrowserWindow.getAllWindows().map(w => w.id));
         },
       },
     ],

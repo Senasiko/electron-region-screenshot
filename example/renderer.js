@@ -1,4 +1,4 @@
-const { screenshot } = require('../index');
+const { screenshot } = require('../dist/index');
 
 
 document.getElementById('screenshot__button').addEventListener('click', () => {
