@@ -31,7 +31,6 @@ function __awaiter(thisArg, _arguments, P, generator) {
     });
 }
 
-const screenshot = require('desktop-screenshot');
 class ScreenshotTaker {
     start(index) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -43,20 +42,18 @@ class ScreenshotTaker {
                 yield this.performWindowsCapture(outputPath);
             }
             if (platform === 'darwin') {
-                yield this.performMacOSCapture(destFolder, outputPath, index);
+                yield this.performMacOSCapture(outputPath, index);
             }
             return outputPath;
         });
     }
-    performMacOSCapture(destFolder, outputPath, index) {
-        const paths = [];
-        for (let i = 0; i <= index; i++) {
-            if (i === index)
-                paths.push(outputPath);
-            else
-                paths.push(path.join(destFolder, `${i}.png`));
-        }
-        const process = child_process.spawn('screencapture', paths);
+    performMacOSCapture(outputPath, index) {
+        const process = child_process.spawn('screencapture', [
+            '-x',
+            '-D',
+            `${index + 1}`,
+            outputPath,
+        ]);
         return this.waitCapturer(process);
     }
     performWindowsCapture(outputPath) {
@@ -78,9 +75,11 @@ class ScreenshotTaker {
         return promise;
     }
 }
+//# sourceMappingURL=index.js.map
 
 const { screen, BrowserWindow } = electron.remote;
 const clipRenderUrl = './screenshot/screen.html';
+// const capturerUrl = './capturer/capturer.html'
 const ipc = electron.ipcRenderer;
 let win = null;
 let _resolve = null;
@@ -144,7 +143,7 @@ function reset() {
 //   }));
 //   return win;
 // }
-function screenshot$1() {
+function screenshot() {
     return __awaiter(this, void 0, void 0, function* () {
         if (_resolve && _reject) {
             console.log('has rr');
@@ -155,27 +154,36 @@ function screenshot$1() {
             _reject = reject;
         });
         if (!win || win.isDestroyed()) {
-            const cursorPoint = screen.getCursorScreenPoint();
-            const currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
-            // const capturerWin = createCapturerWin();
-            const path = yield new ScreenshotTaker().start(screen.getAllDisplays().findIndex(s => s.id === currentScreen.id));
-            win = createChildWin(clipRenderUrl, Object.assign({ x: currentScreen.bounds.x, y: currentScreen.bounds.y }, currentScreen.size));
-            win.on('closed', () => {
-                win = null;
-            });
-            win.on('ready-to-show', () => {
-                var _a, _b;
-                (_a = win) === null || _a === void 0 ? void 0 : _a.show();
-                (_b = win) === null || _b === void 0 ? void 0 : _b.focus();
-            });
-            win.webContents.executeJavaScript(`;window.cut(${currentScreen.size.width}, ${currentScreen.size.height}, '${path}');`);
-            return promise;
+            try {
+                const cursorPoint = screen.getCursorScreenPoint();
+                const currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
+                // const capturerWin = createCapturerWin();
+                new ScreenshotTaker().start(screen.getAllDisplays().findIndex(s => s.id === currentScreen.id)).then((path) => {
+                    electron.ipcRenderer.send('capturer-data', path);
+                });
+                win = createChildWin(clipRenderUrl, Object.assign({ x: currentScreen.bounds.x, y: currentScreen.bounds.y }, currentScreen.size));
+                win.on('closed', () => {
+                    win = null;
+                });
+                win.on('ready-to-show', () => {
+                    var _a, _b;
+                    (_a = win) === null || _a === void 0 ? void 0 : _a.show();
+                    (_b = win) === null || _b === void 0 ? void 0 : _b.focus();
+                });
+                win.webContents.executeJavaScript(`;window.cut(${currentScreen.size.width}, ${currentScreen.size.height});`);
+                return promise;
+            }
+            catch (e) {
+                _reject && _reject(e);
+                reset();
+                return;
+            }
         }
         return Promise.reject(new Error('is cutting'));
     });
 }
 ipc.on('shortcut-capture', (event, arg) => {
-    screenshot$1();
+    screenshot();
 });
 ipc.on('screenshot-success', (event, arg) => {
     reset();
@@ -191,5 +199,5 @@ ipc.on('quit-cut', (e, arg) => {
     _resolve = null;
 });
 module.exports = {
-    screenshot: screenshot$1,
+    screenshot: screenshot,
 };

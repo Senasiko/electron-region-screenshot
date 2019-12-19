@@ -13,19 +13,18 @@ export class ScreenshotTaker {
       await this.performWindowsCapture(outputPath);
     }
     if (platform === 'darwin') {
-      await this.performMacOSCapture(destFolder, outputPath, index);
+      await this.performMacOSCapture(outputPath, index);
     }
     return outputPath;
   }
 
-  performMacOSCapture(destFolder: string, outputPath: string, index: number) {
-
-    const paths: string[] = [];
-    for (let i = 0; i <= index; i++) {
-      if (i === index) paths.push(outputPath);
-      else paths.push(path.join(destFolder, `${i}.png`))
-    }
-    const process = spawn('screencapture', paths)
+  performMacOSCapture(outputPath: string, index: number) {
+    const process = spawn('screencapture', [
+      '-x',
+      '-D',
+      `${index + 1}`,
+      outputPath,
+    ])
 
     return this.waitCapturer(process);
   }

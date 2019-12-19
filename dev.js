@@ -24,7 +24,6 @@ function startExample() {
   if (hasError()) return;
   if (exampleProcess) {
     process.kill(exampleProcess.pid);
-    exampleProcess = null;
     nowWaiting = Math.random();
     const waiting = nowWaiting;
     setTimeout(() => {
@@ -38,7 +37,12 @@ async function rollupBuild(options) {
   configStatus[options.input] = false;
   watcher.on('event', (event) => {
     switch (event.code) {
-      case 'END': configStatus[options.input] = true; !hasError() && startExample(); break;
+      case 'END': 
+        configStatus[options.input] = true; 
+        if (!hasError()) {
+          startExample(); 
+        }
+      break;
       case 'ERROR': console.log(event.error); configStatus[options.input] = false; break;
     }
   });

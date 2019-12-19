@@ -1,8 +1,15 @@
 
 import { ipcMain, WebContents, BrowserWindow } from 'electron';
 
+let screenshotContent: WebContents | undefined;
+let imgPath: string | undefined;
+
+function reset() {
+  screenshotContent = undefined;
+  imgPath = undefined;
+}
+
 export const initMain = (winContent: WebContents) => {
-  let screenshotContent: WebContents | undefined;
   // 接收截图工具信号
   ipcMain.on('screenshot-page', (event, message) => {
     screenshotContent = event.sender;
@@ -18,19 +25,20 @@ export const initMain = (winContent: WebContents) => {
         break;
       case 'ready':
         winContent.send('screenshot-ready', message);
+        if (imgPath) {
+          event.sender.send('capturer-data', imgPath);
+          reset();
+        }
         break;
       default:
         break;
     }
   });
   // 接收捕获桌面的信号
-  ipcMain.on('capturer-page', (e, message) => {
-    switch (message.type) {
-      case 'success': 
-        if (screenshotContent && !screenshotContent.isDestroyed()) screenshotContent?.send('capturer-data', message.data);
-        const win = BrowserWindow.fromWebContents(e.sender)
-        // if (!win.isDestroyed()) win.close();
-        break;
-    }
+  ipcMain.on('capturer-data', (e, message) => {
+    if (screenshotContent && !screenshotContent.isDestroyed()) {
+      screenshotContent.send('capturer-data', message);
+      reset();
+    } else imgPath = message;
   });
 }

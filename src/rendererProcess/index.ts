@@ -1,5 +1,5 @@
 
-import { remote, ipcRenderer, BrowserWindowConstructorOptions } from 'electron';
+import { remote, ipcRenderer, BrowserWindowConstructorOptions, desktopCapturer, ipcMain } from 'electron';
 import url from 'url';
 import path from 'path';
 import { ScreenshotTaker } from '../capturer';
@@ -82,24 +82,33 @@ async function screenshot() {
     _reject = reject;
   });
   if (!win || win.isDestroyed()) {
-    const cursorPoint = screen.getCursorScreenPoint();
-    const currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
-    // const capturerWin = createCapturerWin();
-    const path = await new ScreenshotTaker().start(screen.getAllDisplays().findIndex(s => s.id === currentScreen.id));
-    win = createChildWin(clipRenderUrl, {
-      x: currentScreen.bounds.x,
-      y: currentScreen.bounds.y,
-      ...currentScreen.size,
-    });
-    win.on('closed', () => {
-      win = null;
-    });
-    win.on('ready-to-show', () => {
-      win?.show();
-      win?.focus();
-    });
-    win.webContents.executeJavaScript(`;window.cut(${currentScreen.size.width}, ${currentScreen.size.height}, '${path}');`);
-    return promise
+    try {
+      const cursorPoint = screen.getCursorScreenPoint();
+      const currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
+      // const capturerWin = createCapturerWin();
+      
+      new ScreenshotTaker().start(screen.getAllDisplays().findIndex(s => s.id === currentScreen.id)).then((path) => {
+        ipcRenderer.send('capturer-data', path)
+      });
+      win = createChildWin(clipRenderUrl, {
+        x: currentScreen.bounds.x,
+        y: currentScreen.bounds.y,
+        ...currentScreen.size,
+      });
+      win.on('closed', () => {
+        win = null;
+      });
+      win.on('ready-to-show', () => {
+        win?.show();
+        win?.focus();
+      });
+      win.webContents.executeJavaScript(`;window.cut(${currentScreen.size.width}, ${currentScreen.size.height});`);
+      return promise
+    } catch (e) {
+      _reject && _reject(e);
+      reset();
+      return
+    }    
   }
   return Promise.reject(new Error('is cutting'));
 }

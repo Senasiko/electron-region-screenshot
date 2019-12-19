@@ -42,7 +42,14 @@ module.exports = [
       file: 'dist/rendererProcess.js',
       format: 'cjs',
     },
-    plugins
+    plugins: [
+      ...plugins,
+      copy({
+        targets: [
+          { src: ['src/capturer/**/*', '!**/*.ts'], dest: 'dist' }
+        ]
+      })
+    ]
   },
   {
     input: 'src/screenshot/screen.ts',
@@ -63,23 +70,4 @@ module.exports = [
       })
     ]
   },
-  {
-    input: 'src/capturer/index.ts',
-    external,
-    output: {
-      file: 'dist/capturer/index.js',
-      format: 'cjs',
-    },
-    watch: {
-      include: ['src/capturer/**/*']
-    },
-    plugins: [
-      ...plugins,
-      copy({
-        targets: [
-          { src: ['src/capturer/**/*', '!**/*.ts'], dest: 'dist/capturer' }
-        ]
-      })
-    ]
-  }
 ]

@@ -4,8 +4,13 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var electron = require('electron');
 
+let screenshotContent;
+let imgPath;
+function reset() {
+    screenshotContent = undefined;
+    imgPath = undefined;
+}
 const initMain = (winContent) => {
-    let screenshotContent;
     // 接收截图工具信号
     electron.ipcMain.on('screenshot-page', (event, message) => {
         screenshotContent = event.sender;
@@ -21,20 +26,21 @@ const initMain = (winContent) => {
                 break;
             case 'ready':
                 winContent.send('screenshot-ready', message);
+                if (imgPath) {
+                    event.sender.send('capturer-data', imgPath);
+                    reset();
+                }
                 break;
         }
     });
     // 接收捕获桌面的信号
-    electron.ipcMain.on('capturer-page', (e, message) => {
-        var _a;
-        switch (message.type) {
-            case 'success':
-                if (screenshotContent && !screenshotContent.isDestroyed())
-                    (_a = screenshotContent) === null || _a === void 0 ? void 0 : _a.send('capturer-data', message.data);
-                const win = electron.BrowserWindow.fromWebContents(e.sender);
-                // if (!win.isDestroyed()) win.close();
-                break;
+    electron.ipcMain.on('capturer-data', (e, message) => {
+        if (screenshotContent && !screenshotContent.isDestroyed()) {
+            screenshotContent.send('capturer-data', message);
+            reset();
         }
+        else
+            imgPath = message;
     });
 };
 
