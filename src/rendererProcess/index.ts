@@ -1,10 +1,11 @@
 
-import { remote, desktopCapturer, ipcRenderer, BrowserWindowConstructorOptions } from 'electron';
+import { remote, ipcRenderer, BrowserWindowConstructorOptions } from 'electron';
 import url from 'url';
 import path from 'path';
+import { ScreenshotTaker } from '../capturer';
 const { screen, BrowserWindow } = remote;
 const clipRenderUrl = './screenshot/screen.html'
-const capturerUrl = './capturer/capturer.html'
+// const capturerUrl = './capturer/capturer.html'
 const ipc = ipcRenderer;
 let win: Electron.BrowserWindow | null = null;
 let _resolve: Function | null = null;
@@ -39,8 +40,6 @@ function createChildWin(_url: string, opts: BrowserWindowConstructorOptions) {
     slashes: true,
   }));
   if (process.platform === 'darwin') {
-    // _win.webContents.openDevTools();
-    // return _win
     _win.setAlwaysOnTop(true, 'screen-saver')
     _win.setVisibleOnAllWorkspaces(true)
     _win.setFullScreenable(false)
@@ -55,39 +54,22 @@ function reset() {
   win = null;
 }
 
-function createCapturerWin() {
-  const win = new BrowserWindow({
-    show: false,
-    frame: false,
-    width: 0,
-    height: 0,
-    webPreferences: {
-      nodeIntegration: true,
-    }
-  });
-  win.loadURL(url.format({
-    pathname: path.join(__dirname, capturerUrl),
-    protocol: 'file',
-    slashes: true,
-  }));
-  return win;
-  // win.webContents.openDevTools()
-}
-
-// async function capturer(screen: Display) {
-//   try {
-//     const sources = await desktopCapturer.getSources(
-//       {
-//         types: ['screen'],
-//         thumbnailSize: {
-//           width: screen.size.width * screen.scaleFactor,
-//           height: screen.size.height * screen.scaleFactor,
-//         }
-//       });
-//     return sources.find(source => parseInt(source.display_id) === screen.id)?.thumbnail.toDataURL();
-//   } catch (e) {
-//     throw e
-//   }
+// function createCapturerWin() {
+//   const win = new BrowserWindow({
+//     show: false,
+//     frame: false,
+//     width: 0,
+//     height: 0,
+//     webPreferences: {
+//       nodeIntegration: true,
+//     }
+//   });
+//   win.loadURL(url.format({
+//     pathname: path.join(__dirname, capturerUrl),
+//     protocol: 'file',
+//     slashes: true,
+//   }));
+//   return win;
 // }
 
 async function screenshot() {
@@ -102,32 +84,21 @@ async function screenshot() {
   if (!win || win.isDestroyed()) {
     const cursorPoint = screen.getCursorScreenPoint();
     const currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
-    const capturerWin = createCapturerWin();
-    console.time('ca');
-    console.log('ca start');
-    // capturerWin.webContents.on('did-finish-load', () => {
-      console.log('ready');
-      win = createChildWin(clipRenderUrl, {
-        x: currentScreen.bounds.x,
-        y: currentScreen.bounds.y,
-        ...currentScreen.size,
-      });
-      win.on('closed', () => {
-        win = null;
-      });
-      win.on('ready-to-show', () => {
-        win?.show();
-        win?.focus();
-      });
-      // ipc.once('screenshot-ready', () => {
-      // capturer(currentScreen).then((imageData) => {
-      //   win?.webContents.executeJavaScript(`;window.setImgUrl('${imageData}');`);
-      // });
-      // });
-      win.webContents.executeJavaScript(`;window.cut(${currentScreen.size.width}, ${currentScreen.size.height});`);
-      console.timeEnd('ca');
-    // })
-    // await new Promise(r => setTimeout(r, 50));
+    // const capturerWin = createCapturerWin();
+    const path = await new ScreenshotTaker().start(screen.getAllDisplays().findIndex(s => s.id === currentScreen.id));
+    win = createChildWin(clipRenderUrl, {
+      x: currentScreen.bounds.x,
+      y: currentScreen.bounds.y,
+      ...currentScreen.size,
+    });
+    win.on('closed', () => {
+      win = null;
+    });
+    win.on('ready-to-show', () => {
+      win?.show();
+      win?.focus();
+    });
+    win.webContents.executeJavaScript(`;window.cut(${currentScreen.size.width}, ${currentScreen.size.height}, '${path}');`);
     return promise
   }
   return Promise.reject(new Error('is cutting'));

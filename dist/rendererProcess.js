@@ -5,6 +5,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var electron = require('electron');
 var url = _interopDefault(require('url'));
 var path = _interopDefault(require('path'));
+var child_process = require('child_process');
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
@@ -30,9 +31,56 @@ function __awaiter(thisArg, _arguments, P, generator) {
     });
 }
 
+const screenshot = require('desktop-screenshot');
+class ScreenshotTaker {
+    start(index) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const fileName = `cap_${index}.png`;
+            const destFolder = electron.remote.app.getPath('userData');
+            const outputPath = path.join(destFolder, fileName);
+            const platform = process.platform;
+            if (platform === 'win32') {
+                yield this.performWindowsCapture(outputPath);
+            }
+            if (platform === 'darwin') {
+                yield this.performMacOSCapture(destFolder, outputPath, index);
+            }
+            return outputPath;
+        });
+    }
+    performMacOSCapture(destFolder, outputPath, index) {
+        const paths = [];
+        for (let i = 0; i <= index; i++) {
+            if (i === index)
+                paths.push(outputPath);
+            else
+                paths.push(path.join(destFolder, `${i}.png`));
+        }
+        const process = child_process.spawn('screencapture', paths);
+        return this.waitCapturer(process);
+    }
+    performWindowsCapture(outputPath) {
+        const process = child_process.spawn(path.join(__dirname, 'nircmd.exe'), [
+            'savescreenshotwin',
+            outputPath
+        ]);
+        return this.waitCapturer(process);
+    }
+    waitCapturer(process) {
+        let resolve;
+        let reject;
+        const promise = new Promise((res, rej) => {
+            resolve = res;
+            reject = rej;
+        });
+        process.on('exit', () => { resolve(); });
+        process.on('error', () => { reject(); });
+        return promise;
+    }
+}
+
 const { screen, BrowserWindow } = electron.remote;
 const clipRenderUrl = './screenshot/screen.html';
-const capturerUrl = './capturer/capturer.html';
 const ipc = electron.ipcRenderer;
 let win = null;
 let _resolve = null;
@@ -67,8 +115,6 @@ function createChildWin(_url, opts) {
         slashes: true,
     }));
     if (process.platform === 'darwin') {
-        // _win.webContents.openDevTools();
-        // return _win
         _win.setAlwaysOnTop(true, 'screen-saver');
         _win.setVisibleOnAllWorkspaces(true);
         _win.setFullScreenable(false);
@@ -81,40 +127,24 @@ function reset() {
     win && win.close();
     win = null;
 }
-function createCapturerWin() {
-    const win = new BrowserWindow({
-        show: false,
-        frame: false,
-        width: 0,
-        height: 0,
-        webPreferences: {
-            nodeIntegration: true,
-        }
-    });
-    win.loadURL(url.format({
-        pathname: path.join(__dirname, capturerUrl),
-        protocol: 'file',
-        slashes: true,
-    }));
-    return win;
-    // win.webContents.openDevTools()
-}
-// async function capturer(screen: Display) {
-//   try {
-//     const sources = await desktopCapturer.getSources(
-//       {
-//         types: ['screen'],
-//         thumbnailSize: {
-//           width: screen.size.width * screen.scaleFactor,
-//           height: screen.size.height * screen.scaleFactor,
-//         }
-//       });
-//     return sources.find(source => parseInt(source.display_id) === screen.id)?.thumbnail.toDataURL();
-//   } catch (e) {
-//     throw e
-//   }
+// function createCapturerWin() {
+//   const win = new BrowserWindow({
+//     show: false,
+//     frame: false,
+//     width: 0,
+//     height: 0,
+//     webPreferences: {
+//       nodeIntegration: true,
+//     }
+//   });
+//   win.loadURL(url.format({
+//     pathname: path.join(__dirname, capturerUrl),
+//     protocol: 'file',
+//     slashes: true,
+//   }));
+//   return win;
 // }
-function screenshot() {
+function screenshot$1() {
     return __awaiter(this, void 0, void 0, function* () {
         if (_resolve && _reject) {
             console.log('has rr');
@@ -127,11 +157,8 @@ function screenshot() {
         if (!win || win.isDestroyed()) {
             const cursorPoint = screen.getCursorScreenPoint();
             const currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
-            const capturerWin = createCapturerWin();
-            console.time('ca');
-            console.log('ca start');
-            // capturerWin.webContents.on('did-finish-load', () => {
-            console.log('ready');
+            // const capturerWin = createCapturerWin();
+            const path = yield new ScreenshotTaker().start(screen.getAllDisplays().findIndex(s => s.id === currentScreen.id));
             win = createChildWin(clipRenderUrl, Object.assign({ x: currentScreen.bounds.x, y: currentScreen.bounds.y }, currentScreen.size));
             win.on('closed', () => {
                 win = null;
@@ -141,22 +168,14 @@ function screenshot() {
                 (_a = win) === null || _a === void 0 ? void 0 : _a.show();
                 (_b = win) === null || _b === void 0 ? void 0 : _b.focus();
             });
-            // ipc.once('screenshot-ready', () => {
-            // capturer(currentScreen).then((imageData) => {
-            //   win?.webContents.executeJavaScript(`;window.setImgUrl('${imageData}');`);
-            // });
-            // });
-            win.webContents.executeJavaScript(`;window.cut(${currentScreen.size.width}, ${currentScreen.size.height});`);
-            console.timeEnd('ca');
-            // })
-            // await new Promise(r => setTimeout(r, 50));
+            win.webContents.executeJavaScript(`;window.cut(${currentScreen.size.width}, ${currentScreen.size.height}, '${path}');`);
             return promise;
         }
         return Promise.reject(new Error('is cutting'));
     });
 }
 ipc.on('shortcut-capture', (event, arg) => {
-    screenshot();
+    screenshot$1();
 });
 ipc.on('screenshot-success', (event, arg) => {
     reset();
@@ -172,5 +191,5 @@ ipc.on('quit-cut', (e, arg) => {
     _resolve = null;
 });
 module.exports = {
-    screenshot: screenshot,
+    screenshot: screenshot$1,
 };

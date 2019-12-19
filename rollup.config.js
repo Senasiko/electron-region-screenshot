@@ -13,6 +13,7 @@ const external = [
   'electron',
   'path',
   'url',
+  'child_process',
 ]
 
 module.exports = [
@@ -63,10 +64,10 @@ module.exports = [
     ]
   },
   {
-    input: 'src/capturer/capturer.ts',
+    input: 'src/capturer/index.ts',
     external,
     output: {
-      file: 'dist/capturer/capturer.js',
+      file: 'dist/capturer/index.js',
       format: 'cjs',
     },
     watch: {

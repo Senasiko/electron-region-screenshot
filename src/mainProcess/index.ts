@@ -27,9 +27,9 @@ export const initMain = (winContent: WebContents) => {
   ipcMain.on('capturer-page', (e, message) => {
     switch (message.type) {
       case 'success': 
-        if (!screenshotContent?.isDestroyed()) screenshotContent?.send('capturer-data', message.data);
+        if (screenshotContent && !screenshotContent.isDestroyed()) screenshotContent?.send('capturer-data', message.data);
         const win = BrowserWindow.fromWebContents(e.sender)
-        if (!win.isDestroyed()) win.close();
+        // if (!win.isDestroyed()) win.close();
         break;
     }
   });

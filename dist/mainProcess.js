@@ -26,15 +26,13 @@ const initMain = (winContent) => {
     });
     // 接收捕获桌面的信号
     electron.ipcMain.on('capturer-page', (e, message) => {
-        var _a, _b;
+        var _a;
         switch (message.type) {
             case 'success':
-                if (!((_a = screenshotContent) === null || _a === void 0 ? void 0 : _a.isDestroyed()))
-                    (_b = screenshotContent) === null || _b === void 0 ? void 0 : _b.send('capturer-data', message.data);
+                if (screenshotContent && !screenshotContent.isDestroyed())
+                    (_a = screenshotContent) === null || _a === void 0 ? void 0 : _a.send('capturer-data', message.data);
                 const win = electron.BrowserWindow.fromWebContents(e.sender);
-                if (!win.isDestroyed())
-                    win.close();
-                console.log(electron.BrowserWindow.getAllWindows().map(w => !w.isDestroyed()).length);
+                // if (!win.isDestroyed()) win.close();
                 break;
         }
     });

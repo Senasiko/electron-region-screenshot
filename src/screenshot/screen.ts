@@ -39,7 +39,7 @@ class ScreenCut {
   isShowTool: boolean;
 
 
-  constructor(cas: string, casMask: string, size: { width: number, height: number }) {
+  constructor(cas: string, casMask: string, size: { width: number, height: number }, path: string) {
     this.canvasMask = document.getElementById(casMask) as HTMLCanvasElement;
 
 
@@ -47,6 +47,7 @@ class ScreenCut {
     this.height = size.height;
 
     this.image = document.getElementById('img') as HTMLImageElement;
+    this.image.src = path;
 
     this.state = 'ready';
     this.cuted = false;
@@ -77,7 +78,7 @@ class ScreenCut {
 
   setImgUrl(url: string) {
     this.image.src = url;
-    this.maskImg?.setAttribute('href', this.image.src);
+    this.maskImg?.setAttribute('href', url);
   }
   // 获取鼠标位置
   getMouse() {
@@ -432,6 +433,7 @@ ipcRenderer.on('capturer-data', (e, url) => {
   screenCut?.setImgUrl(url);
 });
 
-(window as any).cut = (width: number, height: number) => {
-  screenCut = new ScreenCut('canvas', 'canvasMask', { width, height });
+(window as any).cut = (width: number, height: number, path: string) => {
+  console.log(path);
+  screenCut = new ScreenCut('canvas', 'canvasMask', { width, height }, path);
 }

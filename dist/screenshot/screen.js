@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 let screenCut;
 class ScreenCut {
-    constructor(cas, casMask, size) {
+    constructor(cas, casMask, size, path) {
         this.start = {
             x: 0,
             y: 0,
@@ -25,6 +25,7 @@ class ScreenCut {
         this.width = size.width;
         this.height = size.height;
         this.image = document.getElementById('img');
+        this.image.src = path;
         this.state = 'ready';
         this.cuted = false;
         this.isShowTool = false;
@@ -48,7 +49,7 @@ class ScreenCut {
     setImgUrl(url) {
         var _a;
         this.image.src = url;
-        (_a = this.maskImg) === null || _a === void 0 ? void 0 : _a.setAttribute('href', this.image.src);
+        (_a = this.maskImg) === null || _a === void 0 ? void 0 : _a.setAttribute('href', url);
     }
     // 获取鼠标位置
     getMouse() {
@@ -392,6 +393,7 @@ ipcRenderer.on('capturer-data', (e, url) => {
     var _a;
     (_a = screenCut) === null || _a === void 0 ? void 0 : _a.setImgUrl(url);
 });
-window.cut = (width, height) => {
-    screenCut = new ScreenCut('canvas', 'canvasMask', { width, height });
+window.cut = (width, height, path) => {
+    console.log(path);
+    screenCut = new ScreenCut('canvas', 'canvasMask', { width, height }, path);
 };
