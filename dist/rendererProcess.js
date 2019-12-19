@@ -31,9 +31,33 @@ function __awaiter(thisArg, _arguments, P, generator) {
     });
 }
 
+const { screen } = electron.remote;
 class ScreenshotTaker {
-    start(index) {
+    constructor() {
+        const cursorPoint = screen.getCursorScreenPoint();
+        this.currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
+        if (process.platform === 'win32')
+            this.bounds = this.getWindowsBounds();
+        else
+            this.bounds = this.getMacBounds();
+    }
+    getMacBounds() {
+        return this.currentScreen.bounds;
+    }
+    getWindowsBounds() {
+        const allDisplays = screen.getAllDisplays().sort((a, b) => a.bounds.x - b.bounds.x);
+        const lastDisplay = allDisplays[allDisplays.length - 1];
+        console.log(lastDisplay);
+        return {
+            x: 0,
+            y: 0,
+            width: lastDisplay.bounds.x + lastDisplay.bounds.width,
+            height: lastDisplay.bounds.y + lastDisplay.bounds.height,
+        };
+    }
+    start() {
         return __awaiter(this, void 0, void 0, function* () {
+            const index = screen.getAllDisplays().findIndex(s => s.id === this.currentScreen.id);
             const fileName = `cap_${index}.png`;
             const destFolder = electron.remote.app.getPath('userData');
             const outputPath = path.join(destFolder, fileName);
@@ -58,7 +82,7 @@ class ScreenshotTaker {
     }
     performWindowsCapture(outputPath) {
         const process = child_process.spawn(path.join(__dirname, 'nircmd.exe'), [
-            'savescreenshotwin',
+            'savescreenshotfull',
             outputPath
         ]);
         return this.waitCapturer(process);
@@ -75,9 +99,8 @@ class ScreenshotTaker {
         return promise;
     }
 }
-//# sourceMappingURL=index.js.map
 
-const { screen, BrowserWindow } = electron.remote;
+const { screen: screen$1, BrowserWindow } = electron.remote;
 const clipRenderUrl = './screenshot/screen.html';
 // const capturerUrl = './capturer/capturer.html'
 const ipc = electron.ipcRenderer;
@@ -88,8 +111,9 @@ let _reject = null;
  * 创建截屏窗口
  */
 function createChildWin(_url, opts) {
+    console.log(opts.width, opts.height);
     let config = {
-        alwaysOnTop: true,
+        // alwaysOnTop: true,
         show: false,
         transparent: true,
         frame: false,
@@ -108,6 +132,10 @@ function createChildWin(_url, opts) {
     };
     config = Object.assign(config, opts);
     const _win = new BrowserWindow(config);
+    _win.setBounds({
+        width: opts.width,
+        height: opts.height,
+    });
     _win.loadURL(url.format({
         pathname: path.join(__dirname, _url),
         protocol: 'file',
@@ -126,23 +154,6 @@ function reset() {
     win && win.close();
     win = null;
 }
-// function createCapturerWin() {
-//   const win = new BrowserWindow({
-//     show: false,
-//     frame: false,
-//     width: 0,
-//     height: 0,
-//     webPreferences: {
-//       nodeIntegration: true,
-//     }
-//   });
-//   win.loadURL(url.format({
-//     pathname: path.join(__dirname, capturerUrl),
-//     protocol: 'file',
-//     slashes: true,
-//   }));
-//   return win;
-// }
 function screenshot() {
     return __awaiter(this, void 0, void 0, function* () {
         if (_resolve && _reject) {
@@ -155,13 +166,13 @@ function screenshot() {
         });
         if (!win || win.isDestroyed()) {
             try {
-                const cursorPoint = screen.getCursorScreenPoint();
-                const currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
+                const taker = new ScreenshotTaker();
                 // const capturerWin = createCapturerWin();
-                new ScreenshotTaker().start(screen.getAllDisplays().findIndex(s => s.id === currentScreen.id)).then((path) => {
+                console.log(taker.bounds);
+                taker.start().then((path) => {
                     electron.ipcRenderer.send('capturer-data', path);
                 });
-                win = createChildWin(clipRenderUrl, Object.assign({ x: currentScreen.bounds.x, y: currentScreen.bounds.y }, currentScreen.size));
+                win = createChildWin(clipRenderUrl, taker.bounds);
                 win.on('closed', () => {
                     win = null;
                 });
@@ -170,7 +181,7 @@ function screenshot() {
                     (_a = win) === null || _a === void 0 ? void 0 : _a.show();
                     (_b = win) === null || _b === void 0 ? void 0 : _b.focus();
                 });
-                win.webContents.executeJavaScript(`;window.cut(${currentScreen.size.width}, ${currentScreen.size.height});`);
+                win.webContents.executeJavaScript(`;window.cut(${taker.bounds.width}, ${taker.bounds.height});`);
                 return promise;
             }
             catch (e) {

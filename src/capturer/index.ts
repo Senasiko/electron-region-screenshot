@@ -1,10 +1,48 @@
-import { remote } from "electron";
+import { remote, Display } from "electron";
 import path from 'path';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 
+const { screen } = remote;
+
+interface ScreenshotBounds {
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+}
+
 export class ScreenshotTaker {
 
-  async start(index: number): Promise<string> {
+  bounds: ScreenshotBounds;
+
+  currentScreen: Display;
+
+  constructor() {
+
+    const cursorPoint = screen.getCursorScreenPoint();
+    this.currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
+    if (process.platform === 'win32') this.bounds = this.getWindowsBounds();
+    else this.bounds = this.getMacBounds(); 
+  }
+
+  getMacBounds(): ScreenshotBounds {
+    return this.currentScreen.bounds;
+  }
+
+  getWindowsBounds(): ScreenshotBounds {
+    const allDisplays = screen.getAllDisplays().sort((a, b) => a.bounds.x - b.bounds.x);
+    const lastDisplay = allDisplays[allDisplays.length - 1];
+    console.log(lastDisplay);
+    return {
+      x: 0,
+      y: 0,
+      width: lastDisplay.bounds.x + lastDisplay.bounds.width,
+      height: lastDisplay.bounds.y + lastDisplay.bounds.height,
+    }
+  }
+
+  async start(): Promise<string> {
+    const index = screen.getAllDisplays().findIndex(s => s.id === this.currentScreen.id)
     const fileName = `cap_${index}.png`;
     const destFolder = remote.app.getPath('userData');
     const outputPath = path.join(destFolder, fileName);
@@ -30,7 +68,7 @@ export class ScreenshotTaker {
   }
   performWindowsCapture(outputPath: string) {
     const process = spawn(path.join(__dirname, 'nircmd.exe'), [
-      'savescreenshotwin',
+      'savescreenshotfull',
       outputPath
     ]);
     return this.waitCapturer(process);

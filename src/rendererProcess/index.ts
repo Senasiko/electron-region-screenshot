@@ -14,8 +14,9 @@ let _reject: Function | null = null;
  * 创建截屏窗口
  */
 function createChildWin(_url: string, opts: BrowserWindowConstructorOptions) {
+  console.log(opts.width, opts.height);
   let config = {
-    alwaysOnTop: true,
+    // alwaysOnTop: true,
     show: false,
     transparent: true,
     frame: false,
@@ -34,6 +35,10 @@ function createChildWin(_url: string, opts: BrowserWindowConstructorOptions) {
   };
   config = Object.assign(config, opts);
   const _win = new BrowserWindow(config);
+  _win.setBounds({
+    width: opts.width,
+    height: opts.height,
+  })
   _win.loadURL(url.format({
     pathname: path.join(__dirname, _url),
     protocol: 'file',
@@ -54,24 +59,6 @@ function reset() {
   win = null;
 }
 
-// function createCapturerWin() {
-//   const win = new BrowserWindow({
-//     show: false,
-//     frame: false,
-//     width: 0,
-//     height: 0,
-//     webPreferences: {
-//       nodeIntegration: true,
-//     }
-//   });
-//   win.loadURL(url.format({
-//     pathname: path.join(__dirname, capturerUrl),
-//     protocol: 'file',
-//     slashes: true,
-//   }));
-//   return win;
-// }
-
 async function screenshot() {
   if (_resolve && _reject) {
     console.log('has rr');
@@ -83,18 +70,14 @@ async function screenshot() {
   });
   if (!win || win.isDestroyed()) {
     try {
-      const cursorPoint = screen.getCursorScreenPoint();
-      const currentScreen = screen.getDisplayNearestPoint({ x: cursorPoint.x, y: cursorPoint.y });
+      const taker = new ScreenshotTaker();
       // const capturerWin = createCapturerWin();
-      
-      new ScreenshotTaker().start(screen.getAllDisplays().findIndex(s => s.id === currentScreen.id)).then((path) => {
+      console.log(taker.bounds);
+
+      taker.start().then((path) => {
         ipcRenderer.send('capturer-data', path)
       });
-      win = createChildWin(clipRenderUrl, {
-        x: currentScreen.bounds.x,
-        y: currentScreen.bounds.y,
-        ...currentScreen.size,
-      });
+      win = createChildWin(clipRenderUrl, taker.bounds);
       win.on('closed', () => {
         win = null;
       });
@@ -102,7 +85,7 @@ async function screenshot() {
         win?.show();
         win?.focus();
       });
-      win.webContents.executeJavaScript(`;window.cut(${currentScreen.size.width}, ${currentScreen.size.height});`);
+      win.webContents.executeJavaScript(`;window.cut(${taker.bounds.width}, ${taker.bounds.height});`);
       return promise
     } catch (e) {
       _reject && _reject(e);
