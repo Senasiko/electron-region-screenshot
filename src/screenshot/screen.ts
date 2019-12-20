@@ -39,9 +39,8 @@ class ScreenCut {
   isShowTool: boolean;
 
 
-  constructor(cas: string, casMask: string, size: { width: number, height: number }) {
+  constructor(casMask: string, size: { width: number, height: number }) {
     this.canvasMask = document.getElementById(casMask) as HTMLCanvasElement;
-
 
     this.width = size.width;
     this.height = size.height;
@@ -432,10 +431,6 @@ ipcRenderer.on('capturer-data', (e, url) => {
   screenCut?.setImgUrl(url);
 });
 
-(window as any).setImgUrl = (url: string) => {
-  screenCut?.setImgUrl(url)
-}
-
 (window as any).cut = (width: number, height: number) => {
-  screenCut = new ScreenCut('canvas', 'canvasMask', { width, height });
+  screenCut = new ScreenCut('canvasMask', { width, height });
 }

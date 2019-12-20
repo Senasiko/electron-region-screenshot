@@ -6,7 +6,7 @@ const plugins = [
   typescript({
     objectHashIgnoreUnknownHack: true
   }),
-  // terser(),
+  terser(),
 ];
 
 const external = [

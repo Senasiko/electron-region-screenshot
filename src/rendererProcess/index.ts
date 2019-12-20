@@ -1,22 +1,21 @@
 
-import { remote, ipcRenderer, BrowserWindowConstructorOptions, desktopCapturer, ipcMain } from 'electron';
+import { remote, ipcRenderer, BrowserWindowConstructorOptions } from 'electron';
 import url from 'url';
 import path from 'path';
 import { ScreenshotTaker } from '../capturer';
-const { screen, BrowserWindow } = remote;
+const { BrowserWindow } = remote;
 const clipRenderUrl = './screenshot/screen.html'
 // const capturerUrl = './capturer/capturer.html'
 const ipc = ipcRenderer;
+
 let win: Electron.BrowserWindow | null = null;
 let _resolve: Function | null = null;
 let _reject: Function | null = null;
-/**
- * 创建截屏窗口
- */
+let taker: ScreenshotTaker | null = null;
+
 function createChildWin(_url: string, opts: BrowserWindowConstructorOptions) {
-  console.log(opts.width, opts.height);
   let config = {
-    // alwaysOnTop: true,
+    alwaysOnTop: true,
     show: false,
     transparent: true,
     frame: false,
@@ -57,11 +56,11 @@ function createChildWin(_url: string, opts: BrowserWindowConstructorOptions) {
 function reset() {
   win && win.close();
   win = null;
+  taker?.clear();
 }
 
 async function screenshot() {
   if (_resolve && _reject) {
-    console.log('has rr');
     return Promise.reject(new Error('is cutting'));
   }
   const promise = new Promise((resolve, reject) => {
@@ -70,10 +69,7 @@ async function screenshot() {
   });
   if (!win || win.isDestroyed()) {
     try {
-      const taker = new ScreenshotTaker();
-      // const capturerWin = createCapturerWin();
-      console.log(taker.bounds);
-
+      taker = new ScreenshotTaker();
       taker.start().then((path) => {
         ipcRenderer.send('capturer-data', path)
       });
@@ -107,10 +103,9 @@ ipc.on('screenshot-success', (event, arg) => {
   _reject = null;
 });
 
-// 接受截图退出事件
 ipc.on('quit-cut', (e, arg) => {
   reset();
-  _reject && _reject();
+  _reject && _reject('quit cut');
   _reject = null;
   _resolve = null;
 });

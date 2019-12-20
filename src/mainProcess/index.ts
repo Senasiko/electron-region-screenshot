@@ -18,7 +18,7 @@ export const initMain = (winContent: WebContents) => {
         winContent.send('quit-cut');
         break;
       case 'save':
-        // winContent.send('screenshot-success', message);
+        winContent.send('quit-cut');
         break;
       case 'success':
         winContent.send('screenshot-success', message);

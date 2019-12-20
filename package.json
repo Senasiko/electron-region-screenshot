@@ -1,6 +1,6 @@
 {
   "name": "electron-region-screenshot",
-  "version": "2.0.0-beta.2",
+  "version": "2.0.0",
   "description": "region screenshot for electron",
   "author": "Senasiko",
   "repository": {

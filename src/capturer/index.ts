@@ -1,5 +1,6 @@
 import { remote, Display } from "electron";
 import path from 'path';
+import fs from 'fs';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 
 const { screen } = remote;
@@ -14,6 +15,8 @@ interface ScreenshotBounds {
 export class ScreenshotTaker {
 
   bounds: ScreenshotBounds;
+
+  outputPath: string = '';
 
   currentScreen: Display;
 
@@ -30,9 +33,8 @@ export class ScreenshotTaker {
   }
 
   getWindowsBounds(): ScreenshotBounds {
-    const allDisplays = screen.getAllDisplays().sort((a, b) => a.bounds.x - b.bounds.x);
+    const allDisplays = screen.getAllDisplays().sort((a, b) => a.bounds.x === b.bounds.x ? a.bounds.y - b.bounds.y : a.bounds.x - b.bounds.x);
     const lastDisplay = allDisplays[allDisplays.length - 1];
-    console.log(lastDisplay);
     return {
       x: 0,
       y: 0,
@@ -45,15 +47,19 @@ export class ScreenshotTaker {
     const index = screen.getAllDisplays().findIndex(s => s.id === this.currentScreen.id)
     const fileName = `cap_${index}.png`;
     const destFolder = remote.app.getPath('userData');
-    const outputPath = path.join(destFolder, fileName);
+    this.outputPath = path.join(destFolder, fileName);
     const platform = process.platform;
     if (platform === 'win32') {
-      await this.performWindowsCapture(outputPath);
+      await this.performWindowsCapture(this.outputPath);
     }
     if (platform === 'darwin') {
-      await this.performMacOSCapture(outputPath, index);
+      await this.performMacOSCapture(this.outputPath, index);
     }
-    return outputPath;
+    return this.outputPath;
+  }
+
+  clear() {
+    fs.unlink(this.outputPath, () => {});
   }
 
   performMacOSCapture(outputPath: string, index: number) {
@@ -82,7 +88,7 @@ export class ScreenshotTaker {
       reject = rej;
     })
     process.on('exit', () => { resolve() })
-    process.on('error', () => { reject() })
+    process.on('error', (e) => { reject(e) })
     return promise;
   }
 }
