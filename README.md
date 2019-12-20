@@ -1,6 +1,5 @@
 # electron-region-screenshot
-region screenshot for electron, transform from [shotScreen](https://github.com/chong0808/shotScreen)
-
+region screenshot for electron.
 ## usage
 ```
 npm install electron-region-screenshot
@@ -21,4 +20,16 @@ screenshot().then(({ base64 } => {
   console.log(base64);
 });
 ```
-
+## notice
+when use in Windows. add the snippet in `package.json`
+```json
+...
+ "build": {
+    ...
+    "asarUnpack": [
+      "*.exe"
+    ],
+    ...
+ }
+...
+```

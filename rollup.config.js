@@ -13,6 +13,7 @@ const external = [
   'electron',
   'path',
   'url',
+  'fs',
   'child_process',
 ]
 

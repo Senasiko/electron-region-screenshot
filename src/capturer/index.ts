@@ -73,7 +73,7 @@ export class ScreenshotTaker {
     return this.waitCapturer(process);
   }
   performWindowsCapture(outputPath: string) {
-    const process = spawn(path.join(__dirname, 'nircmd.exe'), [
+    const process = spawn(this.fixPathForAsar(path.join(__dirname, 'nircmd.exe')), [
       'savescreenshotfull',
       outputPath
     ]);
@@ -90,5 +90,13 @@ export class ScreenshotTaker {
     process.on('exit', () => { resolve() })
     process.on('error', (e) => { reject(e) })
     return promise;
+  }
+
+  isUsingAsar(): boolean {
+    return 'electron' in process.versions && !!process.mainModule && process.mainModule.filename.includes('app.asar');
+  }
+
+  fixPathForAsar(path: string): string {
+    return this.isUsingAsar() ? path.replace('app.asar', 'app.asar.unpacked') : path;
   }
 }
